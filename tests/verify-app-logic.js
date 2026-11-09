@@ -12,7 +12,8 @@ global.document = {
   body: { classList: { add() {}, remove() {} } },
   getElementById() { return null; },
   querySelector() { return null; },
-  querySelectorAll() { return []; }
+  querySelectorAll() { return []; },
+  addEventListener() {}
 };
 
 require('../data/presets.js');
@@ -49,7 +50,7 @@ const cartState = [
 const subtotal = app.calculateSubtotal(cartState);
 assert.strictEqual(subtotal, 570, 'Subtotal should be 530 + 40 = 570');
 
-// Test 3: WhatsApp receipt formatting for Delivery
+// Test 3: WhatsApp receipt formatting for Delivery in Arabic
 const orderInfoDelivery = {
   orderType: 'delivery',
   customerName: 'محمد علي',
@@ -67,7 +68,7 @@ assert.ok(msgDelivery.includes('نوع الطلب:* توصيل 🛵'), 'Should i
 assert.ok(msgDelivery.includes('محمد علي'), 'Should include customer name');
 assert.ok(msgDelivery.includes('01012345678'), 'Should include customer phone');
 assert.ok(msgDelivery.includes('شارع 9، المعادي'), 'Should include address');
-assert.ok(msgDelivery.includes('تريبل عملاق، جبنة شيدر سائلة'), 'Should list selected modifiers');
+assert.ok(msgDelivery.includes('تريبل عملاق، جبنة شيدر سائلة'), 'Should list selected modifiers with Arabic comma');
 assert.ok(msgDelivery.includes('المجموع الفرعي:* 570 جنيه'), 'Should format subtotal correctly');
 assert.ok(msgDelivery.includes('رسوم التوصيل:* 30 جنيه'), 'Should format delivery fee');
 assert.ok(msgDelivery.includes('الإجمالي النهائي:* 600 جنيه'), 'Total should equal subtotal + fee');
@@ -90,4 +91,25 @@ assert.ok(!msgTakeaway.includes('رسوم التوصيل:'), 'Takeaway receipt s
 assert.ok(!msgTakeaway.includes('العنوان:'), 'Takeaway receipt should omit delivery address row');
 assert.ok(msgTakeaway.includes('الإجمالي النهائي:* 570 جنيه'), 'Takeaway total must equal subtotal');
 
-console.log('App logic, cart keys & receipt formatting tests passed successfully.');
+// Test 5: English receipt uses English comma separator (Issue #11 fix)
+const orderInfoEnglish = {
+  orderType: 'delivery',
+  customerName: 'John Doe',
+  customerPhone: '01012345678',
+  address: '15 Nile St.',
+  notes: 'Ring bell',
+  deliveryFee: 20,
+  currency: 'EGP',
+  shopName: 'Smash Master'
+};
+const msgEnglish = app.formatWhatsAppReceipt(cartState, orderInfoEnglish, 'en');
+assert.ok(msgEnglish.includes('Triple Monster, Melted Cheddar'), 'English receipt must use English comma separator');
+
+// Test 6: Empty cart produces 0 total (Issue #10 fix)
+const emptyReceipt = app.formatWhatsAppReceipt([], orderInfoDelivery, 'ar');
+assert.ok(emptyReceipt.includes('الإجمالي النهائي:* 0 جنيه'), 'Empty cart must produce 0 grand total');
+
+// Test 7: HTML escaping helper
+assert.strictEqual(app.escapeHtml('<script>'), '&lt;script&gt;', 'Must escape HTML tags');
+
+console.log('App logic, cart keys, i18n & receipt formatting tests passed successfully.');

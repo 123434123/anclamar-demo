@@ -1,6 +1,21 @@
 // js/pitch-controls.js - Secret Pitch Controls, URL Params, Link Generator & Persistence
 (function () {
-  const STORAGE_KEY = 'shop_demo_overrides';
+  const STORAGE_KEY = 'shop_demo_overrides_v2';
+
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function sanitizePhone(phone) {
+    if (!phone) return '';
+    return String(phone).replace(/[^0-9]/g, '');
+  }
 
   function parseQueryParams() {
     if (typeof window === 'undefined' || !window.location || !window.location.search) {
@@ -10,33 +25,33 @@
     return {
       shop: params.get('shop') || null,
       name: params.get('name') || null,
-      phone: params.get('phone') || null,
-      fee: params.get('fee') !== null ? parseFloat(params.get('fee')) : null,
+      phone: params.get('phone') ? sanitizePhone(params.get('phone')) : null,
+      fee: params.get('fee') !== null && !isNaN(parseFloat(params.get('fee'))) ? parseFloat(params.get('fee')) : null,
       curr: params.get('curr') || null,
       demo: params.get('demo') === 'true' || params.get('demo') === '1'
     };
   }
 
-  function getStoredOverrides() {
-    if (typeof window === 'undefined' || !window.localStorage) return {};
+  function getStoredState() {
+    if (typeof window === 'undefined' || !window.localStorage) return { currentShopId: 'grill', presets: {} };
     try {
       const data = window.localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : {};
+      return data ? JSON.parse(data) : { currentShopId: 'grill', presets: {} };
     } catch (e) {
-      return {};
+      return { currentShopId: 'grill', presets: {} };
     }
   }
 
-  function saveStoredOverrides(overrides) {
+  function saveStoredState(state) {
     if (typeof window === 'undefined' || !window.localStorage) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
       console.warn('Failed to save demo overrides to localStorage', e);
     }
   }
 
-  function clearStoredOverrides() {
+  function clearStoredState() {
     if (typeof window === 'undefined' || !window.localStorage) return;
     try {
       window.localStorage.removeItem(STORAGE_KEY);
@@ -44,15 +59,22 @@
   }
 
   const PitchControls = {
+    escapeHtml: escapeHtml,
+    sanitizePhone: sanitizePhone,
+
     getEffectiveConfig: function () {
       const q = parseQueryParams();
-      const s = getStoredOverrides();
+      const s = getStoredState();
 
-      const shopId = q.shop || s.shopId || 'grill';
-      const shopName = q.name || s.shopName || null;
-      const phone = q.phone || s.phone || null;
-      const deliveryFee = q.fee !== null && !isNaN(q.fee) ? q.fee : (s.deliveryFee !== undefined && !isNaN(s.deliveryFee) ? s.deliveryFee : 25);
-      const currency = q.curr || s.currency || 'EGP';
+      // Current active shop preset
+      const shopId = q.shop || s.currentShopId || 'grill';
+      const presetOverrides = (s.presets && s.presets[shopId]) ? s.presets[shopId] : {};
+
+      // URL parameters take precedence if provided, then preset-specific localStorage, then default
+      const shopName = q.name || presetOverrides.shopName || null;
+      const phone = q.phone || presetOverrides.phone || null;
+      const deliveryFee = q.fee !== null ? q.fee : (typeof presetOverrides.deliveryFee === 'number' ? presetOverrides.deliveryFee : 25);
+      const currency = q.curr || presetOverrides.currency || 'EGP';
       const isDemoMode = q.demo || s.isDemoMode || false;
 
       return {
@@ -66,14 +88,43 @@
     },
 
     saveOverrides: function (data) {
-      const current = getStoredOverrides();
-      const updated = Object.assign({}, current, data);
-      saveStoredOverrides(updated);
+      const state = getStoredState();
+      state.presets = state.presets || {};
+
+      const targetShopId = data.shopId || state.currentShopId || 'grill';
+      state.currentShopId = targetShopId;
+      state.isDemoMode = data.isDemoMode !== undefined ? data.isDemoMode : true;
+
+      state.presets[targetShopId] = {
+        shopName: data.shopName !== undefined ? data.shopName : (state.presets[targetShopId]?.shopName || null),
+        phone: data.phone !== undefined ? sanitizePhone(data.phone) : (state.presets[targetShopId]?.phone || null),
+        deliveryFee: typeof data.deliveryFee === 'number' ? data.deliveryFee : (state.presets[targetShopId]?.deliveryFee ?? 25),
+        currency: data.currency || state.presets[targetShopId]?.currency || 'EGP'
+      };
+
+      saveStoredState(state);
+
+      // Synchronize browser URL query parameters without shadowing
+      if (typeof window !== 'undefined' && window.location && window.history && window.history.replaceState) {
+        const cleanUrl = this.generateClientLink({
+          shopId: targetShopId,
+          shopName: state.presets[targetShopId].shopName,
+          phone: state.presets[targetShopId].phone,
+          deliveryFee: state.presets[targetShopId].deliveryFee,
+          currency: state.presets[targetShopId].currency
+        });
+        const urlObj = new URL(cleanUrl);
+        if (state.isDemoMode) {
+          urlObj.searchParams.set('demo', 'true');
+        }
+        window.history.replaceState(null, '', urlObj.toString());
+      }
+
       return this.getEffectiveConfig();
     },
 
     resetDefaults: function () {
-      clearStoredOverrides();
+      clearStoredState();
       return this.getEffectiveConfig();
     },
 
@@ -85,10 +136,10 @@
       const params = new URLSearchParams();
       if (cfg.shopId) params.set('shop', cfg.shopId);
       if (cfg.shopName) params.set('name', cfg.shopName);
-      if (cfg.phone) params.set('phone', cfg.phone);
+      if (cfg.phone) params.set('phone', sanitizePhone(cfg.phone));
       if (cfg.deliveryFee !== null && cfg.deliveryFee !== undefined) params.set('fee', cfg.deliveryFee);
       if (cfg.currency && cfg.currency !== 'EGP') params.set('curr', cfg.currency);
-      // Explicitly ensure demo=true is NEVER included in client link
+      // Ensure demo=true is NEVER included in client link
       params.delete('demo');
 
       const qs = params.toString();
@@ -148,7 +199,7 @@
       if (typeof document === 'undefined') return;
       const cfg = this.getEffectiveConfig();
 
-      this._setupTriggers();
+      this._setupDelegatedTriggers();
       this._renderToolbar(cfg);
 
       if (cfg.isDemoMode) {
@@ -156,44 +207,45 @@
       }
     },
 
-    _setupTriggers: function () {
-      // Secret triggers: triple tap or long press (800ms) on .logo element
-      const logo = document.querySelector('.logo');
-      if (!logo) return;
+    // Delegated event listener on document so triggers survive header re-renders
+    _setupDelegatedTriggers: function () {
+      if (this._triggersBound) return;
+      this._triggersBound = true;
 
       let clickTimes = [];
       let pressTimer = null;
 
-      logo.addEventListener('click', function (e) {
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.logo')) return;
         const now = Date.now();
         clickTimes.push(now);
         clickTimes = clickTimes.filter(t => now - t < 800);
         if (clickTimes.length >= 3) {
           e.preventDefault();
           clickTimes = [];
-          PitchControls.toggleToolbar();
+          this.toggleToolbar();
         }
       });
 
-      const startPress = function () {
-        pressTimer = setTimeout(function () {
-          PitchControls.toggleToolbar();
+      const startPress = (e) => {
+        if (!e.target.closest('.logo')) return;
+        pressTimer = setTimeout(() => {
+          this.toggleToolbar();
         }, 800);
       };
 
-      const cancelPress = function () {
+      const cancelPress = () => {
         if (pressTimer) {
           clearTimeout(pressTimer);
           pressTimer = null;
         }
       };
 
-      logo.addEventListener('touchstart', startPress, { passive: true });
-      logo.addEventListener('touchend', cancelPress, { passive: true });
-      logo.addEventListener('touchcancel', cancelPress, { passive: true });
-      logo.addEventListener('mousedown', startPress);
-      logo.addEventListener('mouseup', cancelPress);
-      logo.addEventListener('mouseleave', cancelPress);
+      document.addEventListener('touchstart', startPress, { passive: true });
+      document.addEventListener('touchend', cancelPress, { passive: true });
+      document.addEventListener('touchcancel', cancelPress, { passive: true });
+      document.addEventListener('mousedown', startPress);
+      document.addEventListener('mouseup', cancelPress);
     },
 
     toggleToolbar: function () {
@@ -239,7 +291,14 @@
       presetKeys.forEach(function (k) {
         const p = presets[k];
         const selected = k === cfg.shopId ? 'selected' : '';
-        optionsHtml += `<option value="${k}" ${selected}>${p.brand.logoSymbol} ${p.brand.nameAr} (${p.brand.nameEn})</option>`;
+        optionsHtml += `<option value="${escapeHtml(k)}" ${selected}>${p.brand.logoSymbol} ${escapeHtml(p.brand.nameAr)} (${escapeHtml(p.brand.nameEn)})</option>`;
+      });
+
+      const currencies = ['EGP', 'SAR', 'AED', 'KWD', 'USD'];
+      let currOptions = '';
+      currencies.forEach(function (c) {
+        const sel = c === cfg.currency ? 'selected' : '';
+        currOptions += `<option value="${c}" ${sel}>${c}</option>`;
       });
 
       tb.innerHTML = `
@@ -257,17 +316,22 @@
 
             <div class="pitch-field">
               <label>اسم المطعم المخصص:</label>
-              <input type="text" id="pitchShopName" placeholder="مثال: برجر هاوس" value="${cfg.shopName || ''}">
+              <input type="text" id="pitchShopName" placeholder="مثال: برجر هاوس" value="${escapeHtml(cfg.shopName || '')}">
             </div>
 
             <div class="pitch-field">
               <label>رقم واتساب المطعم:</label>
-              <input type="tel" id="pitchPhone" placeholder="2010XXXXXXXX" value="${cfg.phone || ''}">
+              <input type="tel" id="pitchPhone" placeholder="2010XXXXXXXX" value="${escapeHtml(cfg.phone || '')}">
             </div>
 
             <div class="pitch-field">
               <label>رسوم التوصيل الافتراضية:</label>
               <input type="number" id="pitchFee" value="${cfg.deliveryFee}">
+            </div>
+
+            <div class="pitch-field">
+              <label>العملة (Currency):</label>
+              <select id="pitchCurrency">${currOptions}</select>
             </div>
           </div>
 
@@ -279,7 +343,7 @@
         </div>
       `;
 
-      // Event listeners for toolbar buttons
+      // Event listeners
       const closeBtn = document.getElementById('pitchCloseBtn');
       if (closeBtn) closeBtn.onclick = () => this.hideToolbar();
 
@@ -290,12 +354,14 @@
           const newName = document.getElementById('pitchShopName').value.trim() || null;
           const newPhone = document.getElementById('pitchPhone').value.trim() || null;
           const newFee = parseFloat(document.getElementById('pitchFee').value) || 0;
+          const newCurr = document.getElementById('pitchCurrency').value || 'EGP';
 
           this.saveOverrides({
             shopId: newPreset,
             shopName: newName,
             phone: newPhone,
             deliveryFee: newFee,
+            currency: newCurr,
             isDemoMode: true
           });
 
@@ -306,7 +372,7 @@
             } else {
               window.location.reload();
             }
-          }, 300);
+          }, 200);
         };
       }
 
@@ -317,12 +383,14 @@
           const newName = document.getElementById('pitchShopName').value.trim() || null;
           const newPhone = document.getElementById('pitchPhone').value.trim() || null;
           const newFee = parseFloat(document.getElementById('pitchFee').value) || 0;
+          const newCurr = document.getElementById('pitchCurrency').value || 'EGP';
 
           this.copyClientLink({
             shopId: newPreset,
             shopName: newName,
             phone: newPhone,
-            deliveryFee: newFee
+            deliveryFee: newFee,
+            currency: newCurr
           });
         };
       }
@@ -330,12 +398,12 @@
       const resetBtn = document.getElementById('pitchResetBtn');
       if (resetBtn) {
         resetBtn.onclick = () => {
-          if (confirm('هل تريد إعادة ضبط جميع التخصيصات للوضع الافتراضي؟')) {
+          if (confirm('هل تريد استعادة الإعدادات الأصلية؟')) {
             this.resetDefaults();
             this.showToast('تمت استعادة الإعدادات الأصلية');
             setTimeout(function () {
               window.location.href = window.location.pathname;
-            }, 300);
+            }, 250);
           }
         };
       }

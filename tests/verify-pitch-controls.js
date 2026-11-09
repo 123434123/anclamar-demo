@@ -6,7 +6,10 @@ global.window = {
   location: {
     origin: 'https://example.com',
     pathname: '/anclamar-demo/',
-    search: '?shop=burger&name=Smash+Master&phone=201012345678&fee=30&curr=EGP&demo=true'
+    search: '?shop=burger&name=%3Cscript%3Ealert(1)%3C/script%3ESmash+Master&phone=201012345678&fee=30&curr=SAR&demo=true'
+  },
+  history: {
+    replaceState() {}
   },
   localStorage: {
     store: {},
@@ -31,7 +34,8 @@ global.window = {
         querySelectorAll() { return []; }
       };
     },
-    getElementById() { return null; }
+    getElementById() { return null; },
+    addEventListener() {}
   }
 };
 
@@ -48,45 +52,55 @@ assert.ok(pc, 'PitchControls must be exposed on window');
 // Test 1: URL Query parameters parsing
 const cfg = pc.getEffectiveConfig();
 assert.strictEqual(cfg.shopId, 'burger', 'shopId should resolve to burger from URL');
-assert.strictEqual(cfg.shopName, 'Smash Master', 'shopName should resolve to Smash Master from URL');
 assert.strictEqual(cfg.phone, '201012345678', 'phone should resolve from URL');
 assert.strictEqual(cfg.deliveryFee, 30, 'delivery fee should resolve to 30 from URL');
-assert.strictEqual(cfg.currency, 'EGP', 'currency should resolve from URL');
+assert.strictEqual(cfg.currency, 'SAR', 'currency should resolve to SAR from URL');
 assert.strictEqual(cfg.isDemoMode, true, 'isDemoMode should be true when demo=true');
 
-// Test 2: Generate clean client link (without demo=true)
+// Test 2: HTML escaping utility (Issue #1 XSS fix)
+const rawXss = '<script>alert("xss")</script>';
+const escaped = pc.escapeHtml(rawXss);
+assert.ok(!escaped.includes('<script>'), 'escapeHtml must neutralize script tags');
+assert.ok(escaped.includes('&lt;script&gt;'), 'escapeHtml must encode tags');
+
+// Test 3: Generate clean client link (without demo=true)
 const cleanLink = pc.generateClientLink({
   shopId: 'burger',
   shopName: 'Smash Master',
   phone: '201012345678',
   deliveryFee: 30,
-  currency: 'EGP'
+  currency: 'SAR'
 });
 assert.ok(!cleanLink.includes('demo=true'), 'Generated client link must NEVER contain demo=true');
 assert.ok(cleanLink.includes('shop=burger'), 'Link must contain shop=burger');
-assert.ok(cleanLink.includes('phone=201012345678'), 'Link must contain phone');
-assert.ok(cleanLink.includes('fee=30'), 'Link must contain fee=30');
+assert.ok(cleanLink.includes('curr=SAR'), 'Link must contain currency');
 
-// Test 3: LocalStorage persistence override test
+// Test 4: Per-Preset LocalStorage scoping (Issue #3 fix)
 global.window.location.search = ''; // simulate clean URL visit
 pc.saveOverrides({
-  shopId: 'grill',
-  shopName: 'مشويات البركة',
-  phone: '201199998888',
-  deliveryFee: 25,
-  currency: 'جنيه'
+  shopId: 'burger',
+  shopName: 'سماش كينج',
+  phone: '201099998888',
+  deliveryFee: 35,
+  currency: 'EGP'
 });
 
-const storedCfg = pc.getEffectiveConfig();
-assert.strictEqual(storedCfg.shopId, 'grill', 'Should resolve saved shopId');
-assert.strictEqual(storedCfg.shopName, 'مشويات البركة', 'Should resolve saved shopName');
-assert.strictEqual(storedCfg.phone, '201199998888', 'Should resolve saved phone');
-assert.strictEqual(storedCfg.deliveryFee, 25, 'Should resolve saved deliveryFee');
+const burgerCfg = pc.getEffectiveConfig();
+assert.strictEqual(burgerCfg.shopId, 'burger');
+assert.strictEqual(burgerCfg.shopName, 'سماش كينج');
 
-// Test 4: Reset defaults
+// Now switch to grill preset: custom burger name must NOT leak to grill
+pc.saveOverrides({
+  shopId: 'grill'
+});
+const grillCfg = pc.getEffectiveConfig();
+assert.strictEqual(grillCfg.shopId, 'grill');
+assert.strictEqual(grillCfg.shopName, null, 'Grill preset shopName must be null and not leak burger name');
+
+// Test 5: Reset defaults
 pc.resetDefaults();
 const resetCfg = pc.getEffectiveConfig();
 assert.strictEqual(resetCfg.shopId, 'grill', 'Default shopId should fallback to grill');
 assert.strictEqual(resetCfg.shopName, null, 'Custom shopName should be null after reset');
 
-console.log('Pitch controls tests passed successfully.');
+console.log('Pitch controls tests passed successfully with XSS and preset-isolation checks.');

@@ -72,9 +72,9 @@
                   nameEn: 'Side Add-ons',
                   type: 'multiple',
                   options: [
-                    { nameAr: 'طبق أرز بسمتي بالخلطة (+35 ج)', nameEn: 'Basmati Rice (+35 EGP)', priceDelta: 35 },
-                    { nameAr: 'شوربة لسان عصفور بدوي (+25 ج)', nameEn: 'Bedouin Soup (+25 EGP)', priceDelta: 25 },
-                    { nameAr: 'طحينة زيادة (+15 ج)', nameEn: 'Extra Tahini (+15 EGP)', priceDelta: 15 }
+                    { nameAr: 'طبق أرز بسمتي بالخلطة', nameEn: 'Basmati Rice', priceDelta: 35 },
+                    { nameAr: 'شوربة لسان عصفور بدوي', nameEn: 'Bedouin Soup', priceDelta: 25 },
+                    { nameAr: 'طحينة زيادة', nameEn: 'Extra Tahini', priceDelta: 15 }
                   ]
                 }
               ]
@@ -201,9 +201,9 @@
                   nameEn: 'Burger Size',
                   type: 'single',
                   options: [
-                    { nameAr: 'سنجل (قطعة واحدة - 100 جم) (-35 ج)', nameEn: 'Single Patty (-35 EGP)', priceDelta: -35 },
-                    { nameAr: 'دبل (قطعتين - 200 جم)', nameEn: 'Double Patty (Original)', priceDelta: 0 },
-                    { nameAr: 'تريبل عملاق (3 قطع - 300 جم) (+55 ج)', nameEn: 'Triple Monster (+55 EGP)', priceDelta: 55 }
+                    { nameAr: 'سنجل (قطعة واحدة - 100 جم)', nameEn: 'Single Patty', priceDelta: -35 },
+                    { nameAr: 'دبل (قطعتين - 200 جم)', nameEn: 'Double Patty', priceDelta: 0 },
+                    { nameAr: 'تريبل عملاق (3 قطع - 300 جم)', nameEn: 'Triple Monster', priceDelta: 55 }
                   ]
                 },
                 {
@@ -212,10 +212,10 @@
                   nameEn: 'Loaded Add-ons',
                   type: 'multiple',
                   options: [
-                    { nameAr: 'جبنة شيدر سائلة زيادة (+25 ج)', nameEn: 'Extra Melted Cheddar (+25 EGP)', priceDelta: 25 },
-                    { nameAr: 'بيكون بقري مقرمش مدخن (+35 ج)', nameEn: 'Smoked Beef Bacon (+35 EGP)', priceDelta: 35 },
-                    { nameAr: 'هالبينو مكسيكي حار (+15 ج)', nameEn: 'Spicy Jalapeños (+15 EGP)', priceDelta: 15 },
-                    { nameAr: 'بصل مكرمل بالسكر البني (+20 ج)', nameEn: 'Caramelized Onions (+20 EGP)', priceDelta: 20 }
+                    { nameAr: 'جبنة شيدر سائلة زيادة', nameEn: 'Extra Melted Cheddar', priceDelta: 25 },
+                    { nameAr: 'بيكون بقري مقرمش مدخن', nameEn: 'Smoked Beef Bacon', priceDelta: 35 },
+                    { nameAr: 'هالبينو مكسيكي حار', nameEn: 'Spicy Jalapeños', priceDelta: 15 },
+                    { nameAr: 'بصل مكرمل بالسكر البني', nameEn: 'Caramelized Onions', priceDelta: 20 }
                   ]
                 }
               ]
@@ -236,7 +236,7 @@
                   type: 'single',
                   options: [
                     { nameAr: 'دبل عادي', nameEn: 'Double', priceDelta: 0 },
-                    { nameAr: 'تريبل وحش (+55 ج)', nameEn: 'Triple Beast (+55 EGP)', priceDelta: 55 }
+                    { nameAr: 'تريبل وحش', nameEn: 'Triple Beast', priceDelta: 55 }
                   ]
                 }
               ]
@@ -342,7 +342,7 @@
                   type: 'single',
                   options: [
                     { nameAr: 'وسط 28 سم (فرد إلى فردين)', nameEn: 'Medium 28cm (1-2 persons)', priceDelta: 0 },
-                    { nameAr: 'كبير 34 سم (3 أفراد) (+60 ج)', nameEn: 'Large 34cm (+60 EGP)', priceDelta: 60 }
+                    { nameAr: 'كبير 34 سم (3 أفراد)', nameEn: 'Large 34cm (3 persons)', priceDelta: 60 }
                   ]
                 },
                 {
@@ -351,9 +351,9 @@
                   nameEn: 'Crust & Extra Toppings',
                   type: 'multiple',
                   options: [
-                    { nameAr: 'أطراف محشوة جبنة ريكوتا وموتزاريلا (+45 ج)', nameEn: 'Stuffed Cheesy Crust (+45 EGP)', priceDelta: 45 },
-                    { nameAr: 'موتزاريلا بوفالو زيادة (+40 ج)', nameEn: 'Extra Buffalo Mozzarella (+40 EGP)', priceDelta: 40 },
-                    { nameAr: 'مشروم فريش بورتوبيللو (+30 ج)', nameEn: 'Fresh Portobello Mushrooms (+30 EGP)', priceDelta: 30 }
+                    { nameAr: 'أطراف محشوة جبنة ريكوتا وموتزاريلا', nameEn: 'Stuffed Cheesy Crust', priceDelta: 45 },
+                    { nameAr: 'موتزاريلا بوفالو زيادة', nameEn: 'Extra Buffalo Mozzarella', priceDelta: 40 },
+                    { nameAr: 'مشروم فريش بورتوبيللو', nameEn: 'Fresh Portobello Mushrooms', priceDelta: 30 }
                   ]
                 }
               ]
@@ -374,7 +374,7 @@
                   type: 'single',
                   options: [
                     { nameAr: 'وسط 28 سم', nameEn: 'Medium 28cm', priceDelta: 0 },
-                    { nameAr: 'كبير 34 سم (+60 ج)', nameEn: 'Large 34cm (+60 EGP)', priceDelta: 60 }
+                    { nameAr: 'كبير 34 سم', nameEn: 'Large 34cm', priceDelta: 60 }
                   ]
                 }
               ]
@@ -480,8 +480,8 @@
                   type: 'single',
                   options: [
                     { nameAr: 'حليب كامل الدسم فريش', nameEn: 'Fresh Whole Milk', priceDelta: 0 },
-                    { nameAr: 'حليب شوفان أورجانيك (+20 ج)', nameEn: 'Oat Milk (+20 EGP)', priceDelta: 20 },
-                    { nameAr: 'حليب لوز نباتي (+25 ج)', nameEn: 'Almond Milk (+25 EGP)', priceDelta: 25 }
+                    { nameAr: 'حليب شوفان أورجانيك', nameEn: 'Organic Oat Milk', priceDelta: 20 },
+                    { nameAr: 'حليب لوز نباتي', nameEn: 'Almond Milk', priceDelta: 25 }
                   ]
                 },
                 {
@@ -490,9 +490,9 @@
                   nameEn: 'Extra Shots & Syrups',
                   type: 'multiple',
                   options: [
-                    { nameAr: 'إكسترا شوت إسبريسو (+25 ج)', nameEn: 'Extra Espresso Shot (+25 EGP)', priceDelta: 25 },
-                    { nameAr: 'سيروب فانيليا فرنسية (+15 ج)', nameEn: 'French Vanilla Syrup (+15 EGP)', priceDelta: 15 },
-                    { nameAr: 'كراميل مملح غني (+15 ج)', nameEn: 'Salted Caramel Drizzle (+15 EGP)', priceDelta: 15 }
+                    { nameAr: 'إكسترا شوت إسبريسو', nameEn: 'Extra Espresso Shot', priceDelta: 25 },
+                    { nameAr: 'سيروب فانيليا فرنسية', nameEn: 'French Vanilla Syrup', priceDelta: 15 },
+                    { nameAr: 'كراميل مملح غني', nameEn: 'Salted Caramel Drizzle', priceDelta: 15 }
                   ]
                 }
               ]

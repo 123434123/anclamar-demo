@@ -762,6 +762,15 @@ button, input, select, textarea {
   color: var(--accent);
 }
 
+.cart-pill-arrow {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+[dir="ltr"] .cart-pill-arrow {
+  transform: scaleX(-1);
+}
+
 /* ===== 7. CART & CHECKOUT DRAWER ===== */
 .cart-drawer-overlay {
   position: fixed;

@@ -62,9 +62,9 @@
       <b id="cartPillCount">0 أصناف</b>
     </div>
     <div class="cart-pill-cta">
-      <span>عرض الطلب</span>
+      <span id="cartPillCtaText">عرض الطلب</span>
       <span id="cartPillTotal">0 جنيه</span>
-      <span>←</span>
+      <span class="cart-pill-arrow">←</span>
     </div>
   </div>
 
@@ -72,7 +72,7 @@
   <div class="cart-drawer-overlay" id="cartDrawer" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="cart-drawer">
       <div class="cart-drawer-header">
-        <h3>سلة الطلبات 🛍️</h3>
+        <h3 id="cartDrawerTitle">سلة الطلبات 🛍️</h3>
         <button class="cart-drawer-close" onclick="window.App.closeCartDrawer()" aria-label="إغلاق">&times;</button>
       </div>
 
@@ -89,22 +89,22 @@
         <!-- Customer & Delivery Fields -->
         <div class="checkout-fields">
           <div class="field-group">
-            <label for="custName">الاسم بالكامل *</label>
+            <label for="custName" id="labelCustName">الاسم بالكامل *</label>
             <input type="text" id="custName" placeholder="اكتب اسمك هنا" autocomplete="name" required>
           </div>
 
           <div class="field-group">
-            <label for="custPhone">رقم الهاتف للتواصل *</label>
+            <label for="custPhone" id="labelCustPhone">رقم الهاتف للتواصل *</label>
             <input type="tel" id="custPhone" placeholder="01XXXXXXXXX" autocomplete="tel" required>
           </div>
 
           <div class="field-group" id="checkoutAddressWrap">
-            <label for="custAddress">عنوان التوصيل بالتفصيل *</label>
+            <label for="custAddress" id="labelCustAddress">عنوان التوصيل بالتفصيل *</label>
             <input type="text" id="custAddress" placeholder="المنطقة، الشارع، رقم العمارة، الدور، الشقة" autocomplete="street-address">
           </div>
 
           <div class="field-group">
-            <label for="custNotes">ملاحظات إضافية على الطلب</label>
+            <label for="custNotes" id="labelCustNotes">ملاحظات إضافية على الطلب</label>
             <textarea id="custNotes" rows="2" placeholder="أي تفاصيل خاصة بالتتبيلة أو طريقة الاستلام"></textarea>
           </div>
         </div>
@@ -112,15 +112,15 @@
         <!-- Totals Summary -->
         <div class="cart-summary">
           <div class="summary-row">
-            <span>المجموع الفرعي:</span>
+            <span id="labelSubtotal">المجموع الفرعي:</span>
             <b id="drawerSubtotal">0 جنيه</b>
           </div>
           <div class="summary-row" id="drawerDeliveryFeeRow">
-            <span>رسوم التوصيل:</span>
+            <span id="labelDeliveryFee">رسوم التوصيل:</span>
             <b id="drawerDeliveryFee">25 جنيه</b>
           </div>
           <div class="summary-row grand-total">
-            <span>الإجمالي النهائي:</span>
+            <span id="labelGrandTotal">الإجمالي النهائي:</span>
             <b id="drawerGrandTotal">0 جنيه</b>
           </div>
         </div>
@@ -128,7 +128,7 @@
 
       <div class="cart-drawer-footer">
         <button class="whatsapp-submit-btn" onclick="window.App.sendWhatsAppOrder()">
-          <span>إرسال الطلب عبر واتساب 💬</span>
+          <span id="whatsappSubmitBtnText">إرسال الطلب عبر واتساب 💬</span>
         </button>
       </div>
     </div>

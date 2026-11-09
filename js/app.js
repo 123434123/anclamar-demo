@@ -1,11 +1,137 @@
 // js/app.js - Core Application, Modifiers Modal, Cart State & WhatsApp Receipt Engine
 (function () {
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function sanitizePhone(phone) {
+    if (!phone) return '';
+    return String(phone).replace(/[^0-9]/g, '');
+  }
+
+  // Bilingual UI Dictionary
+  const I18N = {
+    ar: {
+      menu: 'القائمة',
+      reviews: 'التقييمات',
+      location: 'الفروع',
+      orderNowHeader: 'اطلب واتساب 💬',
+      browseMenu: 'تصفح قائمة الطعام 📋',
+      directWhatsApp: 'طلب فوري عبر واتساب 💬',
+      perkDelivery: 'توصيل ساخن وسريع',
+      perkZeroCommission: '0% عمولة طلب مباشر',
+      perkFreshness: 'ضمان جودة وطزاجة',
+      searchPlaceholder: '🔍 ابحث في الأصناف والمأكولات...',
+      allCategories: 'الكل',
+      customizableBadge: 'خيارات متعددة',
+      customizeBtn: 'تخصيص الخيارات ⚙️',
+      addToOrderBtn: 'أضف للطلب +',
+      addedToCartToast: 'تمت إضافة الوجبة للطلب 🛒',
+      basePriceLabel: 'السعر الأساسي:',
+      requiredSingleChoice: '(مطلوب - اختر خياراً واحداً)',
+      addToOrderModal: 'إضافة للطلب',
+      cartTitle: 'سلة الطلبات 🛍️',
+      deliveryOption: '🛵 توصيل للمنزل',
+      takeawayOption: '🛍️ استلام من الفرع',
+      emptyCartMsg: 'سلة الطلبات فارغة حاليًا',
+      custNameLabel: 'الاسم بالكامل *',
+      custNamePh: 'اكتب اسمك هنا',
+      custPhoneLabel: 'رقم الهاتف للتواصل *',
+      custPhonePh: '01XXXXXXXXX',
+      custAddressLabel: 'عنوان التوصيل بالتفصيل *',
+      custAddressPh: 'المنطقة، الشارع، رقم العمارة، الدور، الشقة',
+      custNotesLabel: 'ملاحظات إضافية على الطلب',
+      custNotesPh: 'أي تفاصيل خاصة بالتتبيلة أو طريقة الاستلام',
+      subtotalLabel: 'المجموع الفرعي:',
+      deliveryFeeLabel: 'رسوم التوصيل:',
+      grandTotalLabel: 'الإجمالي النهائي:',
+      sendWhatsAppBtn: 'إرسال الطلب عبر واتساب 💬',
+      viewOrderPill: 'عرض الطلب',
+      itemsCountPill: 'أصناف',
+      reviewsHeading: 'آراء وتجارب العملاء ⭐',
+      locationHeading: 'الموقع ومواعيد العمل 📍',
+      addressTitle: 'العنوان:',
+      hoursTitle: 'ساعات العمل:',
+      phoneTitle: 'الهاتف والطلب المباشر:',
+      allRightsReserved: 'جميع الحقوق محفوظة',
+      platformNoteFooter: 'منصة طلب مباشر عبر واتساب بدون عمولات',
+      nameValidationErr: 'يرجى كتابة الاسم لتأكيد الطلب',
+      phoneValidationErr: 'يرجى كتابة رقم الهاتف للتواصل',
+      addressValidationErr: 'يرجى كتابة عنوان التوصيل',
+      emptyCartAlert: 'سلة الطلبات فارغة، يرجى إضافة وجبات أولاً!'
+    },
+    en: {
+      menu: 'Menu',
+      reviews: 'Reviews',
+      location: 'Location',
+      orderNowHeader: 'WhatsApp Order 💬',
+      browseMenu: 'Explore Menu 📋',
+      directWhatsApp: 'Direct WhatsApp 💬',
+      perkDelivery: 'Fast & Hot Delivery',
+      perkZeroCommission: '0% Direct Commission',
+      perkFreshness: 'Freshness Guaranteed',
+      searchPlaceholder: '🔍 Search delicious items...',
+      allCategories: 'All',
+      customizableBadge: 'Customizable',
+      customizeBtn: 'Customize ⚙️',
+      addToOrderBtn: 'Add to Order +',
+      addedToCartToast: 'Added item to cart 🛒',
+      basePriceLabel: 'Base price:',
+      requiredSingleChoice: '(Required - choose one)',
+      addToOrderModal: 'Add to Order',
+      cartTitle: 'Your Cart 🛍️',
+      deliveryOption: '🛵 Home Delivery',
+      takeawayOption: '🛍️ Store Pickup',
+      emptyCartMsg: 'Your cart is currently empty',
+      custNameLabel: 'Full Name *',
+      custNamePh: 'Enter your name',
+      custPhoneLabel: 'Contact Phone Number *',
+      custPhonePh: '01XXXXXXXXX',
+      custAddressLabel: 'Detailed Delivery Address *',
+      custAddressPh: 'Area, street, building, floor, apt',
+      custNotesLabel: 'Order Notes',
+      custNotesPh: 'Any special seasoning or delivery instructions',
+      subtotalLabel: 'Subtotal:',
+      deliveryFeeLabel: 'Delivery Fee:',
+      grandTotalLabel: 'Grand Total:',
+      sendWhatsAppBtn: 'Send Order via WhatsApp 💬',
+      viewOrderPill: 'View Order',
+      itemsCountPill: 'items',
+      reviewsHeading: 'Customer Reviews ⭐',
+      locationHeading: 'Location & Hours 📍',
+      addressTitle: 'Address:',
+      hoursTitle: 'Working Hours:',
+      phoneTitle: 'Phone & Direct Orders:',
+      allRightsReserved: 'All rights reserved',
+      platformNoteFooter: 'Direct WhatsApp ordering platform with 0% commissions',
+      nameValidationErr: 'Please enter your name to confirm order',
+      phoneValidationErr: 'Please enter your phone number',
+      addressValidationErr: 'Please enter your delivery address',
+      emptyCartAlert: 'Your cart is empty, please add items first!'
+    }
+  };
+
   const App = {
     lang: 'ar',
     orderType: 'delivery',
     cart: [],
     activePreset: null,
     effectiveConfig: null,
+    _currentPresetId: null,
+
+    escapeHtml: escapeHtml,
+    sanitizePhone: sanitizePhone,
+
+    t: function (key) {
+      const dict = I18N[this.lang] || I18N.ar;
+      return dict[key] || key;
+    },
 
     // Helper: generate unique cart key based on item id and selected modifiers
     generateCartKey: function (itemId, modifiers) {
@@ -25,13 +151,22 @@
       }, 0);
     },
 
+    // Helper: get configured currency
+    getCurrency: function () {
+      if (this.effectiveConfig && this.effectiveConfig.currency) {
+        return this.effectiveConfig.currency;
+      }
+      return this.lang === 'ar' ? 'جنيه' : 'EGP';
+    },
+
     // Helper: format complete structured WhatsApp receipt
     formatWhatsAppReceipt: function (cartState, orderInfo, lang) {
-      const isAr = (lang || this.lang) === 'ar';
+      const activeLang = lang || this.lang;
+      const isAr = activeLang === 'ar';
       const items = cartState || this.cart;
       const subtotal = this.calculateSubtotal(items);
       const fee = orderInfo.orderType === 'delivery' ? (orderInfo.deliveryFee || 0) : 0;
-      const total = subtotal + fee;
+      const total = items.length === 0 ? 0 : (subtotal + fee);
       const curr = orderInfo.currency || (isAr ? 'جنيه' : 'EGP');
 
       const lines = [];
@@ -47,11 +182,12 @@
       lines.push('────────────────────────');
       lines.push(`*${isAr ? 'تفاصيل الطلب:' : 'Order Items:'}*`);
 
+      const separator = isAr ? '، ' : ', ';
       items.forEach(function (entry) {
         const itemName = isAr ? entry.item.nameAr : (entry.item.nameEn || entry.item.nameAr);
         let line = `• ${entry.qty}x ${itemName}`;
         if (entry.modifiers && entry.modifiers.length > 0) {
-          const modStr = entry.modifiers.map(m => isAr ? m.nameAr : (m.nameEn || m.nameAr)).join('، ');
+          const modStr = entry.modifiers.map(m => isAr ? m.nameAr : (m.nameEn || m.nameAr)).join(separator);
           line += ` (${modStr})`;
         }
         line += ` - ${entry.unitPrice * entry.qty} ${curr}`;
@@ -80,7 +216,13 @@
       const pc = window.PitchControls;
       this.effectiveConfig = pc ? pc.getEffectiveConfig() : { shopId: 'grill', deliveryFee: 25 };
 
-      const presetId = this.effectiveConfig.shopId;
+      const presetId = this.effectiveConfig.shopId || 'grill';
+      
+      // Reset cart if preset has changed to avoid mismatched items
+      if (this._currentPresetId && this._currentPresetId !== presetId) {
+        this.cart = [];
+      }
+      this._currentPresetId = presetId;
       this.activePreset = presets[presetId] || presets.grill;
 
       this.applyTheme(this.activePreset);
@@ -120,9 +262,9 @@
 
     getShopPhone: function () {
       if (this.effectiveConfig && this.effectiveConfig.phone) {
-        return this.effectiveConfig.phone;
+        return sanitizePhone(this.effectiveConfig.phone);
       }
-      return (this.activePreset.contact && this.activePreset.contact.defaultPhone) || '201000000000';
+      return sanitizePhone((this.activePreset.contact && this.activePreset.contact.defaultPhone) || '201000000000');
     },
 
     getDeliveryFee: function () {
@@ -140,6 +282,7 @@
 
       this.renderHeader();
       this.renderHero();
+      this.renderSearchAndControls();
       this.renderCategoryTabs();
       this.renderMenuGrid();
       this.renderTrustAndReviews();
@@ -152,9 +295,9 @@
       const headerMount = document.getElementById('headerMount');
       if (!headerMount) return;
       const isAr = this.lang === 'ar';
-      const shopName = this.getShopDisplayName();
+      const shopName = escapeHtml(this.getShopDisplayName());
       const symbol = this.activePreset.brand.logoSymbol || '🍽️';
-      const phone = this.getShopPhone();
+      const phone = sanitizePhone(this.getShopPhone());
 
       headerMount.innerHTML = `
         <div class="site-header-inner">
@@ -164,15 +307,15 @@
           </a>
           
           <nav class="header-nav">
-            <a href="#menu">${isAr ? 'القائمة' : 'Menu'}</a>
-            <a href="#reviews">${isAr ? 'التقييمات' : 'Reviews'}</a>
-            <a href="#contact">${isAr ? 'الفروع' : 'Location'}</a>
+            <a href="#menu">${this.t('menu')}</a>
+            <a href="#reviews">${this.t('reviews')}</a>
+            <a href="#contact">${this.t('location')}</a>
           </nav>
 
           <div class="header-actions">
             <button class="lang-toggle-btn" id="langToggleBtn">${isAr ? 'EN' : 'عربي'}</button>
             <a class="header-order-btn" href="https://wa.me/${phone}" target="_blank" rel="noopener">
-              ${isAr ? 'اطلب واتساب 💬' : 'WhatsApp Order 💬'}
+              ${this.t('orderNowHeader')}
             </a>
           </div>
         </div>
@@ -194,30 +337,37 @@
       const p = this.activePreset;
       const h = p.hero;
       const r = p.rating;
-      const phone = this.getShopPhone();
+      const phone = sanitizePhone(this.getShopPhone());
 
       heroMount.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.75)), url('${h.bgImage}')`;
       heroMount.innerHTML = `
         <div class="hero-content">
           <div class="hero-badge">
-            <span class="badge-star">★ ${r.googleScore}</span>
-            <span class="badge-text">${isAr ? r.reviewCount : r.reviewCountEn}</span>
+            <span class="badge-star">★ ${escapeHtml(r.googleScore)}</span>
+            <span class="badge-text">${escapeHtml(isAr ? r.reviewCount : r.reviewCountEn)}</span>
           </div>
-          <h1 class="hero-title">${isAr ? h.titleAr : h.titleEn}</h1>
-          <p class="hero-subtitle">${isAr ? h.descAr : h.descEn}</p>
+          <h1 class="hero-title">${escapeHtml(isAr ? h.titleAr : h.titleEn)}</h1>
+          <p class="hero-subtitle">${escapeHtml(isAr ? h.descAr : h.descEn)}</p>
           
           <div class="hero-buttons">
-            <a class="hero-btn primary" href="#menu">${isAr ? 'تصفح قائمة الطعام 📋' : 'Explore Menu 📋'}</a>
-            <a class="hero-btn secondary" href="https://wa.me/${phone}" target="_blank" rel="noopener">${isAr ? 'طلب فوري عبر واتساب 💬' : 'Direct WhatsApp 💬'}</a>
+            <a class="hero-btn primary" href="#menu">${this.t('browseMenu')}</a>
+            <a class="hero-btn secondary" href="https://wa.me/${phone}" target="_blank" rel="noopener">${this.t('directWhatsApp')}</a>
           </div>
 
           <div class="hero-perks">
-            <div class="hero-perk"><span>⚡</span> ${isAr ? 'توصيل ساخن وسريع' : 'Fast & Hot Delivery'}</div>
-            <div class="hero-perk"><span>💳</span> ${isAr ? '0% عمولة طلب مباشر' : '0% Direct Commission'}</div>
-            <div class="hero-perk"><span>⭐</span> ${isAr ? 'ضمان جودة وطزاجة' : 'Freshness Guaranteed'}</div>
+            <div class="hero-perk"><span>⚡</span> ${this.t('perkDelivery')}</div>
+            <div class="hero-perk"><span>💳</span> ${this.t('perkZeroCommission')}</div>
+            <div class="hero-perk"><span>⭐</span> ${this.t('perkFreshness')}</div>
           </div>
         </div>
       `;
+    },
+
+    renderSearchAndControls: function () {
+      const searchInput = document.getElementById('menuSearchInput');
+      if (searchInput) {
+        searchInput.placeholder = this.t('searchPlaceholder');
+      }
     },
 
     renderCategoryTabs: function () {
@@ -226,19 +376,19 @@
       const isAr = this.lang === 'ar';
       const cats = this.activePreset.categories || [];
 
-      let html = `<button class="cat-tab-btn active" data-cat="all">${isAr ? 'الكل' : 'All'}</button>`;
-      cats.forEach(function (c) {
-        html += `<button class="cat-tab-btn" data-cat="${c.id}">${isAr ? c.nameAr : c.nameEn}</button>`;
+      let html = `<button class="cat-tab-btn active" data-cat="all">${this.t('allCategories')}</button>`;
+      cats.forEach((c) => {
+        html += `<button class="cat-tab-btn" data-cat="${escapeHtml(c.id)}">${escapeHtml(isAr ? c.nameAr : c.nameEn)}</button>`;
       });
 
       tabsMount.innerHTML = html;
 
       tabsMount.querySelectorAll('.cat-tab-btn').forEach(btn => {
-        btn.onclick = (e) => {
+        btn.onclick = () => {
           tabsMount.querySelectorAll('.cat-tab-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           const catId = btn.getAttribute('data-cat');
-          App.filterMenuByCategory(catId);
+          this.filterMenuByCategory(catId);
         };
       });
     },
@@ -259,20 +409,20 @@
       if (!menuMount) return;
       const isAr = this.lang === 'ar';
       const cats = this.activePreset.categories || [];
-      const curr = isAr ? 'جنيه' : 'EGP';
+      const curr = escapeHtml(this.getCurrency());
 
       let html = '<div class="menu-grid">';
       cats.forEach(cat => {
         (cat.items || []).forEach(item => {
           const hasMods = Array.isArray(item.modifiers) && item.modifiers.length > 0;
-          const name = isAr ? item.nameAr : (item.nameEn || item.nameAr);
-          const desc = isAr ? item.descAr : (item.descEn || item.descAr);
+          const name = escapeHtml(isAr ? item.nameAr : (item.nameEn || item.nameAr));
+          const desc = escapeHtml(isAr ? item.descAr : (item.descEn || item.descAr));
 
           html += `
-            <div class="menu-item-card" data-category="${cat.id}" data-item-id="${item.id}">
+            <div class="menu-item-card" data-category="${escapeHtml(cat.id)}" data-item-id="${escapeHtml(item.id)}">
               <div class="item-img-wrap">
-                <img src="${item.image}" alt="${name}" loading="lazy" class="item-img">
-                ${hasMods ? `<span class="item-badge">${isAr ? 'خيارات متعددة' : 'Customizable'}</span>` : ''}
+                <img src="${escapeHtml(item.image)}" alt="${name}" loading="lazy" class="item-img">
+                ${hasMods ? `<span class="item-badge">${this.t('customizableBadge')}</span>` : ''}
               </div>
               <div class="item-body">
                 <div class="item-header">
@@ -282,8 +432,8 @@
                 <p class="item-desc">${desc}</p>
                 <div class="item-footer">
                   ${hasMods 
-                    ? `<button class="item-action-btn customize-btn" onclick="window.App.openModifierModal('${item.id}')">${isAr ? 'تخصيص الخيارات ⚙️' : 'Customize ⚙️'}</button>`
-                    : `<button class="item-action-btn add-btn" onclick="window.App.quickAddToCart('${item.id}')">${isAr ? 'أضف للطلب +' : 'Add to Order +'}</button>`
+                    ? `<button class="item-action-btn customize-btn" onclick="window.App.openModifierModal('${escapeHtml(item.id)}')">${this.t('customizeBtn')}</button>`
+                    : `<button class="item-action-btn add-btn" onclick="window.App.quickAddToCart('${escapeHtml(item.id)}')">${this.t('addToOrderBtn')}</button>`
                   }
                 </div>
               </div>
@@ -314,7 +464,7 @@
       }
       this.updateCartUI();
       if (window.PitchControls) {
-        window.PitchControls.showToast(this.lang === 'ar' ? `تمت إضافة ${item.nameAr} للطلب 🛒` : `Added ${item.nameEn} to cart 🛒`);
+        window.PitchControls.showToast(this.t('addedToCartToast'));
       }
     },
 
@@ -331,27 +481,27 @@
       const item = this.findItemById(itemId);
       if (!item) return;
       const isAr = this.lang === 'ar';
-      const curr = isAr ? 'جنيه' : 'EGP';
+      const curr = escapeHtml(this.getCurrency());
 
       const modal = document.getElementById('modifierModal');
       if (!modal) return;
 
       let groupsHtml = '';
-      (item.modifiers || []).forEach((mod, modIdx) => {
+      (item.modifiers || []).forEach((mod) => {
         const isSingle = mod.type === 'single';
-        const modName = isAr ? mod.nameAr : (mod.nameEn || mod.nameAr);
+        const modName = escapeHtml(isAr ? mod.nameAr : (mod.nameEn || mod.nameAr));
 
         groupsHtml += `
-          <div class="mod-group" data-mod-id="${mod.id}" data-mod-type="${mod.type}">
-            <h4 class="mod-group-title">${modName} ${isSingle ? `<span class="mod-req">${isAr ? '(اختياري/مطلوب)' : '(Select one)'}</span>` : ''}</h4>
+          <div class="mod-group" data-mod-id="${escapeHtml(mod.id)}" data-mod-type="${escapeHtml(mod.type)}">
+            <h4 class="mod-group-title">${modName} ${isSingle ? `<span class="mod-req">${this.t('requiredSingleChoice')}</span>` : ''}</h4>
             <div class="mod-options-list">
         `;
 
         mod.options.forEach((opt, optIdx) => {
-          const optName = isAr ? opt.nameAr : (opt.nameEn || opt.nameAr);
+          const optName = escapeHtml(isAr ? opt.nameAr : (opt.nameEn || opt.nameAr));
           const priceText = opt.priceDelta > 0 ? `+${opt.priceDelta} ${curr}` : (opt.priceDelta < 0 ? `${opt.priceDelta} ${curr}` : '');
           const checked = isSingle && optIdx === 0 ? 'checked' : '';
-          const inputName = `mod_${mod.id}`;
+          const inputName = `mod_${escapeHtml(mod.id)}`;
           const inputType = isSingle ? 'radio' : 'checkbox';
 
           groupsHtml += `
@@ -370,11 +520,11 @@
       if (modalContent) {
         modalContent.innerHTML = `
           <div class="mod-modal-header">
-            <img src="${item.image}" alt="" class="mod-modal-img">
+            <img src="${escapeHtml(item.image)}" alt="" class="mod-modal-img">
             <div class="mod-modal-info">
-              <h3>${isAr ? item.nameAr : (item.nameEn || item.nameAr)}</h3>
-              <p>${isAr ? item.descAr : (item.descEn || item.descAr)}</p>
-              <div class="mod-base-price">${isAr ? 'السعر الأساسي:' : 'Base price:'} <b>${item.price} ${curr}</b></div>
+              <h3>${escapeHtml(isAr ? item.nameAr : (item.nameEn || item.nameAr))}</h3>
+              <p>${escapeHtml(isAr ? item.descAr : (item.descEn || item.descAr))}</p>
+              <div class="mod-base-price">${this.t('basePriceLabel')} <b>${item.price} ${curr}</b></div>
             </div>
             <button class="mod-modal-close" onclick="window.App.closeModifierModal()">&times;</button>
           </div>
@@ -387,8 +537,8 @@
               <span id="modalQtyDisplay">1</span>
               <button onclick="window.App.adjustModalQty(1)">+</button>
             </div>
-            <button class="mod-add-to-cart-btn" id="modalAddToCartBtn" onclick="window.App.submitModifierModal('${item.id}')">
-              ${isAr ? 'إضافة للطلب' : 'Add to Order'} • <span id="modalTotalBtnPrice">${item.price}</span> ${curr}
+            <button class="mod-add-to-cart-btn" id="modalAddToCartBtn" onclick="window.App.submitModifierModal('${escapeHtml(item.id)}')">
+              ${this.t('addToOrderModal')} • <span id="modalTotalBtnPrice">${item.price}</span> ${curr}
             </button>
           </div>
         `;
@@ -475,7 +625,7 @@
       this.closeModifierModal();
       this.updateCartUI();
       if (window.PitchControls) {
-        window.PitchControls.showToast(this.lang === 'ar' ? `تمت إضافة ${item.nameAr} بتعديلاتك 🛒` : `Added customized ${item.nameEn} 🛒`);
+        window.PitchControls.showToast(this.t('addedToCartToast'));
       }
     },
 
@@ -490,7 +640,7 @@
 
     updateCartUI: function () {
       const isAr = this.lang === 'ar';
-      const curr = isAr ? 'جنيه' : 'EGP';
+      const curr = escapeHtml(this.getCurrency());
       const subtotal = this.calculateSubtotal(this.cart);
       const totalCount = this.cart.reduce((sum, entry) => sum + entry.qty, 0);
 
@@ -502,26 +652,70 @@
           document.body.classList.add('has-cart-bar');
           const countElem = document.getElementById('cartPillCount');
           const totalElem = document.getElementById('cartPillTotal');
-          if (countElem) countElem.textContent = `${totalCount} ${isAr ? 'أصناف' : 'items'}`;
+          const ctaElem = document.getElementById('cartPillCtaText');
+          if (countElem) countElem.textContent = `${totalCount} ${this.t('itemsCountPill')}`;
           if (totalElem) totalElem.textContent = `${subtotal} ${curr}`;
+          if (ctaElem) ctaElem.textContent = this.t('viewOrderPill');
         } else {
           cartPill.classList.remove('visible');
           document.body.classList.remove('has-cart-bar');
         }
       }
 
+      // Drawer Header & Switch labels
+      const drawerTitle = document.getElementById('cartDrawerTitle');
+      if (drawerTitle) drawerTitle.textContent = this.t('cartTitle');
+
+      const deliveryBtn = document.getElementById('typeDeliveryBtn');
+      if (deliveryBtn) deliveryBtn.textContent = this.t('deliveryOption');
+
+      const takeawayBtn = document.getElementById('typeTakeawayBtn');
+      if (takeawayBtn) takeawayBtn.textContent = this.t('takeawayOption');
+
+      // Form labels & placeholders
+      const nameLbl = document.getElementById('labelCustName');
+      if (nameLbl) nameLbl.textContent = this.t('custNameLabel');
+      const nameInp = document.getElementById('custName');
+      if (nameInp) nameInp.placeholder = this.t('custNamePh');
+
+      const phoneLbl = document.getElementById('labelCustPhone');
+      if (phoneLbl) phoneLbl.textContent = this.t('custPhoneLabel');
+      const phoneInp = document.getElementById('custPhone');
+      if (phoneInp) phoneInp.placeholder = this.t('custPhonePh');
+
+      const addrLbl = document.getElementById('labelCustAddress');
+      if (addrLbl) addrLbl.textContent = this.t('custAddressLabel');
+      const addrInp = document.getElementById('custAddress');
+      if (addrInp) addrInp.placeholder = this.t('custAddressPh');
+
+      const notesLbl = document.getElementById('labelCustNotes');
+      if (notesLbl) notesLbl.textContent = this.t('custNotesLabel');
+      const notesInp = document.getElementById('custNotes');
+      if (notesInp) notesInp.placeholder = this.t('custNotesPh');
+
+      // Summary label updates
+      const subLbl = document.getElementById('labelSubtotal');
+      if (subLbl) subLbl.textContent = this.t('subtotalLabel');
+      const feeLbl = document.getElementById('labelDeliveryFee');
+      if (feeLbl) feeLbl.textContent = this.t('deliveryFeeLabel');
+      const grandLbl = document.getElementById('labelGrandTotal');
+      if (grandLbl) grandLbl.textContent = this.t('grandTotalLabel');
+
+      const submitBtn = document.getElementById('whatsappSubmitBtnText');
+      if (submitBtn) submitBtn.textContent = this.t('sendWhatsAppBtn');
+
       // Render items inside drawer
       const listContainer = document.getElementById('cartDrawerItemsList');
       if (listContainer) {
         if (this.cart.length === 0) {
-          listContainer.innerHTML = `<div class="cart-empty-state"><span class="empty-icon">🛒</span><p>${isAr ? 'سلة الطلبات فارغة حاليًا' : 'Your cart is currently empty'}</p></div>`;
+          listContainer.innerHTML = `<div class="cart-empty-state"><span class="empty-icon">🛒</span><p>${this.t('emptyCartMsg')}</p></div>`;
         } else {
           let itemsHtml = '';
           this.cart.forEach((entry, idx) => {
-            const name = isAr ? entry.item.nameAr : (entry.item.nameEn || entry.item.nameAr);
+            const name = escapeHtml(isAr ? entry.item.nameAr : (entry.item.nameEn || entry.item.nameAr));
             let modChips = '';
             if (entry.modifiers && entry.modifiers.length > 0) {
-              const tags = entry.modifiers.map(m => isAr ? m.nameAr : (m.nameEn || m.nameAr)).join(' • ');
+              const tags = entry.modifiers.map(m => escapeHtml(isAr ? m.nameAr : (m.nameEn || m.nameAr))).join(' • ');
               modChips = `<div class="cart-item-mods">${tags}</div>`;
             }
 
@@ -545,9 +739,9 @@
         }
       }
 
-      // Calculate totals in drawer
+      // Calculate totals in drawer: if cart is empty, grandTotal is 0
       const fee = this.getDeliveryFee();
-      const grandTotal = subtotal + fee;
+      const grandTotal = this.cart.length === 0 ? 0 : (subtotal + fee);
 
       const subElem = document.getElementById('drawerSubtotal');
       if (subElem) subElem.textContent = `${subtotal} ${curr}`;
@@ -622,11 +816,10 @@
 
     sendWhatsAppOrder: function () {
       if (this.cart.length === 0) {
-        alert(this.lang === 'ar' ? 'سلة الطلبات فارغة، يرجى إضافة وجبات أولاً!' : 'Cart is empty, please add items first!');
+        alert(this.t('emptyCartAlert'));
         return;
       }
 
-      const isAr = this.lang === 'ar';
       const nameInput = document.getElementById('custName');
       const phoneInput = document.getElementById('custPhone');
       const addrInput = document.getElementById('custAddress');
@@ -638,19 +831,19 @@
       const notes = notesInput ? notesInput.value.trim() : '';
 
       if (!name) {
-        alert(isAr ? 'يرجى كتابة الاسم لتأكيد الطلب' : 'Please enter your name to confirm order');
+        alert(this.t('nameValidationErr'));
         if (nameInput) nameInput.focus();
         return;
       }
 
       if (!phone) {
-        alert(isAr ? 'يرجى كتابة رقم الهاتف للتواصل' : 'Please enter your phone number');
+        alert(this.t('phoneValidationErr'));
         if (phoneInput) phoneInput.focus();
         return;
       }
 
       if (this.orderType === 'delivery' && !address) {
-        alert(isAr ? 'يرجى كتابة عنوان التوصيل' : 'Please enter your delivery address');
+        alert(this.t('addressValidationErr'));
         if (addrInput) addrInput.focus();
         return;
       }
@@ -662,12 +855,12 @@
         address: address,
         notes: notes,
         deliveryFee: this.getDeliveryFee(),
-        currency: isAr ? 'جنيه' : 'EGP',
+        currency: this.getCurrency(),
         shopName: this.getShopDisplayName()
       };
 
       const message = this.formatWhatsAppReceipt(this.cart, orderInfo, this.lang);
-      const targetPhone = this.getShopPhone().replace(/[^0-9]/g, '');
+      const targetPhone = sanitizePhone(this.getShopPhone());
       const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
 
       window.open(waUrl, '_blank');
@@ -683,8 +876,8 @@
       revMount.innerHTML = `
         <div class="section-container">
           <div class="section-heading">
-            <h2>${isAr ? 'آراء وتجارب العملاء ⭐' : 'Customer Reviews ⭐'}</h2>
-            <p>${isAr ? r.platformNoteAr : r.platformNoteEn}</p>
+            <h2>${this.t('reviewsHeading')}</h2>
+            <p>${escapeHtml(isAr ? r.platformNoteAr : r.platformNoteEn)}</p>
           </div>
           
           <div class="reviews-grid">
@@ -715,35 +908,35 @@
       if (!contactMount) return;
       const isAr = this.lang === 'ar';
       const c = this.activePreset.contact;
-      const phone = this.getShopPhone();
+      const phone = sanitizePhone(this.getShopPhone());
 
       contactMount.innerHTML = `
         <div class="section-container">
           <div class="section-heading">
-            <h2>${isAr ? 'الموقع ومواعيد العمل 📍' : 'Location & Hours 📍'}</h2>
+            <h2>${this.t('locationHeading')}</h2>
           </div>
 
           <div class="contact-card">
             <div class="contact-row">
               <span class="contact-icon">📍</span>
               <div>
-                <b>${isAr ? 'العنوان:' : 'Address:'}</b>
-                <p>${isAr ? c.addressAr : c.addressEn}</p>
+                <b>${this.t('addressTitle')}</b>
+                <p>${escapeHtml(isAr ? c.addressAr : c.addressEn)}</p>
               </div>
             </div>
 
             <div class="contact-row">
               <span class="contact-icon">🕒</span>
               <div>
-                <b>${isAr ? 'ساعات العمل:' : 'Working Hours:'}</b>
-                <p>${isAr ? c.hoursAr : c.hoursEn}</p>
+                <b>${this.t('hoursTitle')}</b>
+                <p>${escapeHtml(isAr ? c.hoursAr : c.hoursEn)}</p>
               </div>
             </div>
 
             <div class="contact-row">
               <span class="contact-icon">📞</span>
               <div>
-                <b>${isAr ? 'الهاتف والطلب المباشر:' : 'Phone & Direct Orders:'}</b>
+                <b>${this.t('phoneTitle')}</b>
                 <p><a href="tel:${phone}" dir="ltr">${phone}</a></p>
               </div>
             </div>
@@ -755,18 +948,20 @@
     renderFooter: function () {
       const footerMount = document.getElementById('footerMount');
       if (!footerMount) return;
-      const isAr = this.lang === 'ar';
-      const shopName = this.getShopDisplayName();
+      const shopName = escapeHtml(this.getShopDisplayName());
 
       footerMount.innerHTML = `
         <div class="footer-inner">
-          <p>© 2026 <b>${shopName}</b>. ${isAr ? 'جميع الحقوق محفوظة' : 'All rights reserved'}.</p>
-          <p class="footer-demo-note">${isAr ? 'منصة طلب مباشر عبر واتساب بدون عمولات' : 'Direct WhatsApp ordering platform with 0% commissions'}</p>
+          <p>© 2026 <b>${shopName}</b>. ${this.t('allRightsReserved')}.</p>
+          <p class="footer-demo-note">${this.t('platformNoteFooter')}</p>
         </div>
       `;
     },
 
     bindGlobalEvents: function () {
+      if (this._eventsBound) return;
+      this._eventsBound = true;
+
       // Setup modal and drawer backdrop dismissals
       const modModal = document.getElementById('modifierModal');
       if (modModal) {
